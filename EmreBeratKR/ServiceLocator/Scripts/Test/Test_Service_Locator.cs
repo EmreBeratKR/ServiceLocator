@@ -4,10 +4,10 @@ namespace EmreBeratKR.ServiceLocator.Test
 {
     public class Test_Service_Locator : MonoBehaviour
     {
-        private void Start()
+        private void Awake()
         {
-            ServiceLocator.Get<Test_Service_Behaviour>(true);
-            ServiceLocator.Get<Test_Service_Object>(true);
+            ServiceLocator.Get<Test_Service_Behaviour>();
+            ServiceLocator.Get<Test_Service_Object>();
         }
     }
 }

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -16,7 +18,7 @@ namespace EmreBeratKR.ServiceLocator
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            Debug.Log("Initialize");
+            AutoRegisterServices();
         }
 
 
@@ -45,9 +47,7 @@ namespace EmreBeratKR.ServiceLocator
                 throw ServiceLocatorException.NotRegistered(type);
             }
 
-            var service = type.CanCastTo<MonoBehaviour>()
-                ? (T) FindOrCreateServiceBehaviour(type)
-                : new T();
+            var service = (T) FindOrCreateService(type);
             
             Register(service);
 
@@ -73,7 +73,19 @@ namespace EmreBeratKR.ServiceLocator
         {
             return $"[{type.Name}]";
         }
+
+
+        private static IService FindOrCreateService(Type type)
+        {
+            return type.CanCastTo<MonoBehaviour>()
+                ? FindOrCreateServiceBehaviour(type)
+                : CreateServiceObject(type);
+        }
         
+        private static IService CreateServiceObject(Type type)
+        {
+            return (IService) Activator.CreateInstance(type);
+        }
         
         private static IService FindOrCreateServiceBehaviour(Type type)
         {
@@ -108,6 +120,32 @@ namespace EmreBeratKR.ServiceLocator
 
             prefab = prefabs[0];
             return true;
+        }
+
+        private static void AutoRegisterServices()
+        {
+            var allAutoRegisteredServices = GetAllAutoRegisteredServices();
+
+            foreach (var autoRegisteredService in allAutoRegisteredServices)
+            {
+                AutoRegisterService(autoRegisteredService);
+            }
+        }
+
+        private static void AutoRegisterService(Type type)
+        {
+            Services[type] = FindOrCreateService(type);
+        }
+
+        private static IEnumerable<Type> GetAllAutoRegisteredServices()
+        {
+            return AppDomain.CurrentDomain
+                .GetAssemblies()
+                .SelectMany(assembly => assembly.GetTypes())
+                .Where(type => !type.IsInterface)
+                .Where(type => !type.IsAbstract)
+                .Where(type => type.CanCastTo<IService>())
+                .Where(type => type.GetCustomAttribute<DoNotAutoRegisterAttribute>() == null);
         }
     }
 }
