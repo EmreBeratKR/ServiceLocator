@@ -32,7 +32,7 @@ namespace EmreBeratKR.ServiceLocator
                 throw ServiceLocatorException.AlreadyRegistered(type);
             }
 
-            Services[type] = service;
+            Register(type, service);
         }
 
         public static T Get<T>(bool findOrCreateAndRegisterIfNotRegistered = false)
@@ -75,6 +75,21 @@ namespace EmreBeratKR.ServiceLocator
         }
 
 
+        private static void Register(Type type, IService service)
+        {
+            if (ShouldDoNotDestroyOnLoad(type))
+            {
+                MarkAsDoNotDestroyOnLoad((MonoBehaviour) service);
+            }
+
+            if (service is MonoBehaviour serviceBehaviour)
+            {
+                serviceBehaviour.name = GetServiceName(type);
+            }
+            
+            Services[type] = service;
+        }
+        
         private static IService FindOrCreateService(Type type)
         {
             return type.CanCastTo<MonoBehaviour>()
@@ -134,7 +149,8 @@ namespace EmreBeratKR.ServiceLocator
 
         private static void AutoRegisterService(Type type)
         {
-            Services[type] = FindOrCreateService(type);
+            var service = FindOrCreateService(type);
+            Register(type, service);
         }
 
         private static IEnumerable<Type> GetAllAutoRegisteredServices()
@@ -142,10 +158,32 @@ namespace EmreBeratKR.ServiceLocator
             return AppDomain.CurrentDomain
                 .GetAssemblies()
                 .SelectMany(assembly => assembly.GetTypes())
-                .Where(type => !type.IsInterface)
-                .Where(type => !type.IsAbstract)
-                .Where(type => type.CanCastTo<IService>())
-                .Where(type => type.GetCustomAttribute<DoNotAutoRegisterAttribute>() == null);
+                .Where(ShouldAutoRegister);
+        }
+
+        private static bool ShouldAutoRegister(Type type)
+        {
+            if (!type.IsClass) return false;
+
+            if (type.IsAbstract) return false;
+
+            if (!type.CanCastTo<IService>()) return false;
+
+            return type.GetCustomAttribute<DoNotAutoRegisterAttribute>() == null;
+        }
+        
+        private static bool ShouldDoNotDestroyOnLoad(Type type)
+        {
+            if (!type.CanCastTo<MonoBehaviour>()) return false;
+
+            if (!type.CanCastTo<IService>()) return false;
+            
+            return type.GetCustomAttribute<DoNotDestroyOnLoadAttribute>() != null;
+        }
+
+        private static void MarkAsDoNotDestroyOnLoad(MonoBehaviour target)
+        {
+            Object.DontDestroyOnLoad(target);
         }
     }
 }
