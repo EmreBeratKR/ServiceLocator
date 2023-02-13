@@ -60,9 +60,11 @@ namespace EmreBeratKR.ServiceLocator
                 ? ms_Instance 
                 : GetOrCreateSettings();
 
-#endif
+#else
 
             return ms_Instance;
+
+#endif
         }
         
         private static ServiceLocatorSettingsSO GetRuntimeInstance()
