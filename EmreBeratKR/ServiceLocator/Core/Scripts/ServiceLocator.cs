@@ -23,7 +23,7 @@ namespace EmreBeratKR.ServiceLocator
 
 
         public static void Register<T>(T service, bool overrideIfRegisteredAlready = false)
-            where T : IService, new()
+            where T : class, IService, new()
         {
             var type = typeof(T);
 
@@ -36,7 +36,7 @@ namespace EmreBeratKR.ServiceLocator
         }
 
         public static T Get<T>(bool findOrCreateAndRegisterIfNotRegistered = false)
-            where T : IService, new()
+            where T : class, IService, new()
         {
             var type = typeof(T);
             
