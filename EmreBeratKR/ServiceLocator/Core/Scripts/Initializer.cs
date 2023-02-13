@@ -9,12 +9,10 @@ namespace EmreBeratKR.ServiceLocator
         private static void Initialize()
         {
             typeof(ServiceLocatorSettingsSO)
-                .GetMethod(nameof(Initialize), BindingFlags.Static | BindingFlags.NonPublic)
-                ?.Invoke(null, null);
+                .InvokeNonPublicStaticMethod(nameof(Initialize));
             
             typeof(ServiceLocator)
-                .GetMethod(nameof(Initialize), BindingFlags.Static | BindingFlags.NonPublic)
-                ?.Invoke(null, null);
+                .InvokeNonPublicStaticMethod(nameof(Initialize));
         }
     }
 }

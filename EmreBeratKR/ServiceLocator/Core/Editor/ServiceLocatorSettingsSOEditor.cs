@@ -7,6 +7,9 @@ namespace EmreBeratKR.ServiceLocator.Editor
     public class ServiceLocatorSettingsSOEditor : UnityEditor.Editor
     {
         private const string MenuItemSettings = "Tools/EmreBeratKR/" + nameof(ServiceLocator) + "/Settings";
+
+
+        private static bool ms_ShowAutoRegisteredServicesToggle;
         
         
         public override void OnInspectorGUI()
@@ -16,8 +19,13 @@ namespace EmreBeratKR.ServiceLocator.Editor
             EditorGUI.BeginDisabledGroup(true);
             
             ServiceLocatorSettingsSO.OnFieldsGUI(settings);
-            
+
             EditorGUI.EndDisabledGroup();
+            
+            EditorGUILayout.Separator();
+            
+            ms_ShowAutoRegisteredServicesToggle = ServiceLocatorSettingsSO
+                .OnAutoRegisteredServicesToggleGUI(ms_ShowAutoRegisteredServicesToggle);
             
             EditorGUILayout.Separator();
 

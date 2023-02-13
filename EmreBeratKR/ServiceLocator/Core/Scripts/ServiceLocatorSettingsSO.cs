@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -21,7 +24,11 @@ namespace EmreBeratKR.ServiceLocator
         [SerializeField] private bool doNotDestroyOnLoad = true;
 
 
-        public static ServiceLocatorSettingsSO Instance { get; private set; }
+        public static ServiceLocatorSettingsSO Instance
+        {
+            get => Application.isPlaying ? ms_Instance : GetOrCreateSettings();
+            private set => ms_Instance = value;
+        }
 
 
         public bool AutoRegister
@@ -35,6 +42,9 @@ namespace EmreBeratKR.ServiceLocator
             get => doNotDestroyOnLoad;
             set => doNotDestroyOnLoad = value;
         }
+
+
+        private static ServiceLocatorSettingsSO ms_Instance;
         
         
         private static void Initialize()
@@ -53,6 +63,43 @@ namespace EmreBeratKR.ServiceLocator
             serializedSettings.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        public static bool OnAutoRegisteredServicesToggleGUI(bool value)
+        {
+            var serviceNames = GetAllAutoRegisteredServices()
+                .Select(type => type.FullName);
+
+            var show = EditorGUILayout.BeginFoldoutHeaderGroup(value, "Auto Registered Services");
+
+            if (show)
+            {
+                EditorGUI.indentLevel += 1;
+                var hasAny = false;
+                
+                foreach (var serviceName in serviceNames)
+                {
+                    hasAny = true;
+                    EditorGUILayout.LabelField(serviceName);
+                }
+
+                if (!hasAny)
+                {
+                    EditorGUILayout.LabelField("None");
+                }
+                
+                EditorGUI.indentLevel -= 1;
+            }
+
+            EditorGUILayout.EndFoldoutHeaderGroup();
+
+            return show;
+        }
+
+
+        private static IEnumerable<Type> GetAllAutoRegisteredServices()
+        {
+            return (IEnumerable<Type>) typeof(ServiceLocator)
+                .InvokeNonPublicStaticMethod(nameof(GetAllAutoRegisteredServices));
+        }
 
         private static ServiceLocatorSettingsSO GetRuntimeInstance()
         {
