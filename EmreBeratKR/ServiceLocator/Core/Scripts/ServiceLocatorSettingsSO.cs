@@ -14,21 +14,14 @@ namespace EmreBeratKR.ServiceLocator
         
         
         private const string DefaultSettingsFileName = "ServiceLocatorSettings";
+        private const string DefaultResourcesSettingsSubFolder = "";
 
-
-        private static readonly GUIContent AutoRegisterContent = new("Auto Register", "Should services be auto registered?");
-        private static readonly GUIContent DoNotDestroyOnLoadContent = new("Do Not Destroy On Load", "Should services be marked as DoNotDestroyOnLoad?");
-        
 
         [SerializeField] private bool autoRegister = true;
         [SerializeField] private bool doNotDestroyOnLoad = true;
 
 
-        public static ServiceLocatorSettingsSO Instance
-        {
-            get => Application.isPlaying ? ms_Instance : GetOrCreateSettings();
-            private set => ms_Instance = value;
-        }
+        public static ServiceLocatorSettingsSO Instance => GetInstance();
 
 
         public bool AutoRegister
@@ -49,10 +42,43 @@ namespace EmreBeratKR.ServiceLocator
         
         private static void Initialize()
         {
-            Instance = GetRuntimeInstance();
+            ms_Instance = GetRuntimeInstance();
+        }
+
+
+        private static IEnumerable<Type> GetAllAutoRegisteredServices()
+        {
+            return (IEnumerable<Type>) typeof(ServiceLocator)
+                .InvokeNonPublicStaticMethod(nameof(GetAllAutoRegisteredServices));
+        }
+
+        private static ServiceLocatorSettingsSO GetInstance()
+        {
+#if UNITY_EDITOR
+
+            return Application.isPlaying 
+                ? ms_Instance 
+                : GetOrCreateSettings();
+
+#endif
+
+            return ms_Instance;
         }
         
+        private static ServiceLocatorSettingsSO GetRuntimeInstance()
+        {
+            var path = $"{DefaultResourcesSettingsSubFolder}{DefaultSettingsFileName}";
+            var instance = Resources.Load<ServiceLocatorSettingsSO>(path);
+            return instance ? instance : CreateInstance<ServiceLocatorSettingsSO>();
+        }
 
+
+#if UNITY_EDITOR
+        
+        private static readonly GUIContent AutoRegisterContent = new("Auto Register", "Should services be auto registered?");
+        private static readonly GUIContent DoNotDestroyOnLoadContent = new("Do Not Destroy On Load", "Should services be marked as DoNotDestroyOnLoad?");
+        
+        
         public static void OnFieldsGUI(ServiceLocatorSettingsSO settings = null)
         {
             var serializedSettings = new SerializedObject(settings ? settings : GetOrCreateSettings());
@@ -62,7 +88,7 @@ namespace EmreBeratKR.ServiceLocator
                 
             serializedSettings.ApplyModifiedPropertiesWithoutUndo();
         }
-
+        
         public static bool OnAutoRegisteredServicesToggleGUI(bool value)
         {
             var serviceNames = GetAllAutoRegisteredServices()
@@ -93,26 +119,8 @@ namespace EmreBeratKR.ServiceLocator
 
             return show;
         }
-
-
-        private static IEnumerable<Type> GetAllAutoRegisteredServices()
-        {
-            return (IEnumerable<Type>) typeof(ServiceLocator)
-                .InvokeNonPublicStaticMethod(nameof(GetAllAutoRegisteredServices));
-        }
-
-        private static ServiceLocatorSettingsSO GetRuntimeInstance()
-        {
-            if (!TryFindSavePath(out var path))
-            {
-                return CreateInstance<ServiceLocatorSettingsSO>();
-            }
-
-            var instance = AssetDatabase.LoadAssetAtPath<ServiceLocatorSettingsSO>(path);
-
-            return instance ? instance : CreateInstance<ServiceLocatorSettingsSO>();
-        }
-
+        
+        
         private static ServiceLocatorSettingsSO GetOrCreateSettings()
         {
             if (!TryFindSavePath(out var path)) return null;
@@ -133,14 +141,14 @@ namespace EmreBeratKR.ServiceLocator
             if (!TryFindFolderPath("Assets/", "ServiceLocator", out path)) return false;
     
             var resourcesPath = path + "/Resources/";
-    
+            
             if (!Directory.Exists(resourcesPath))
             {
                 AssetDatabase.CreateFolder(path, "Resources");
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
-    
+
             path = resourcesPath + $"{DefaultSettingsFileName}.asset";
                 
             return true;
@@ -162,5 +170,7 @@ namespace EmreBeratKR.ServiceLocator
             path = startingPath;
             return false;
         }
+        
+#endif
     }
 }
