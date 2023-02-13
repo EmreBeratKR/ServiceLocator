@@ -15,7 +15,19 @@ namespace EmreBeratKR.ServiceLocator
         private static readonly Dictionary<Type, IService> Services = new();
 
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        public static bool AutoRegister
+        {
+            get => GetAutoRegister();
+            set => SetAutoRegister(value);
+        }
+
+        public static bool DoNotDestroyOnLoad
+        {
+            get => GetDoNotDestroyOnLoad();
+            set => SetDoNotDestroyOnLoad(value);
+        }
+        
+        
         private static void Initialize()
         {
             AutoRegisterServices();
@@ -169,7 +181,13 @@ namespace EmreBeratKR.ServiceLocator
 
             if (!type.CanCastTo<IService>()) return false;
 
-            return type.GetCustomAttribute<DoNotAutoRegisterAttribute>() == null;
+            var attribute = type.GetCustomAttribute<ServiceRegistrationAttribute>();
+
+            if (attribute == null) return AutoRegister;
+
+            if (attribute.mode == ServiceRegistrationMode.UseGlobal) return AutoRegister;
+
+            return attribute.mode == ServiceRegistrationMode.AutoRegister;
         }
         
         private static bool ShouldDoNotDestroyOnLoad(Type type)
@@ -178,12 +196,38 @@ namespace EmreBeratKR.ServiceLocator
 
             if (!type.CanCastTo<IService>()) return false;
             
-            return type.GetCustomAttribute<DoNotDestroyOnLoadAttribute>() != null;
+            var attribute = type.GetCustomAttribute<ServiceSceneLoadAttribute>();
+
+            if (attribute == null) return DoNotDestroyOnLoad;
+
+            if (attribute.mode == ServiceSceneLoadMode.UseGlobal) return DoNotDestroyOnLoad;
+
+            return attribute.mode == ServiceSceneLoadMode.DoNotDestroy;
         }
 
         private static void MarkAsDoNotDestroyOnLoad(MonoBehaviour target)
         {
             Object.DontDestroyOnLoad(target);
+        }
+
+        private static bool GetAutoRegister()
+        {
+            return ServiceLocatorSettingsSO.Instance.AutoRegister;
+        }
+
+        private static void SetAutoRegister(bool value)
+        {
+            ServiceLocatorSettingsSO.Instance.AutoRegister = value;
+        }
+
+        private static bool GetDoNotDestroyOnLoad()
+        {
+            return ServiceLocatorSettingsSO.Instance.DoNotDestroyOnLoad;
+        }
+
+        private static void SetDoNotDestroyOnLoad(bool value)
+        {
+            ServiceLocatorSettingsSO.Instance.DoNotDestroyOnLoad = value;
         }
     }
 }

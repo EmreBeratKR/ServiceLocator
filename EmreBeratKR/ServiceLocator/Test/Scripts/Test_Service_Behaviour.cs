@@ -2,8 +2,8 @@ using UnityEngine;
 
 namespace EmreBeratKR.ServiceLocator.Test
 {
-    [DoNotAutoRegister]
-    [DoNotDestroyOnLoad]
+    [ServiceSceneLoad(ServiceSceneLoadMode.DoNotDestroy)]
+    [ServiceRegistration(ServiceRegistrationMode.DoNotAutoRegister)]
     public class Test_Service_Behaviour : ServiceBehaviour
     {
         [SerializeField] private string someString;
@@ -11,7 +11,7 @@ namespace EmreBeratKR.ServiceLocator.Test
         [SerializeField] private float someFloat;
     }
     
-    [DoNotAutoRegister]
+    [ServiceRegistration(ServiceRegistrationMode.DoNotAutoRegister)]
     public class Test_Service_Object : Service
     {
         public string SomeString { get; set; }
